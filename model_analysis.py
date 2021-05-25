@@ -48,17 +48,45 @@ if dataset is not None:
 
     dataset_source = pd.read_csv(dataset)
     dataset_source.columns = dataset_source.columns.str.lower()
-    if dataset is not None:
+    dataset_integer_variables = dataset_source.select_dtypes(include = ['int','int32','float','float32']).columns
+    dataset_object_variables = dataset_source.select_dtypes(include = ['O']).columns
+    datase_date_variables = dataset_source.select_dtypes(include = ['datetime']).columns
+    
+    st.header('Select operation')
+    if dataset is not None and st.checkbox('Show dataset details'):
+        st.header('Dataset details: ')
+        st.write('Number of records: ',dataset_source.shape[0])
+        st.write('Number of columns: ',dataset_source.shape[1])
         if st.checkbox('Show sample'):
-            
-            st.write(dataset_source.head(10))
+            record_count = st.slider('Select number of records to show',1,20)
+            st.table(dataset_source.head(record_count))
 
+    
+    
+    if st.checkbox('Data visualization'):
+        visual_type = st.radio('Visualize data',('Univariate','Bi-variate'))
 
+        if visual_type == 'Univariate':
+        
+            variables = st.selectbox('Select variables to plot',dataset_source.columns)
+            if variables in dataset_integer_variables:
+                fig,ax = plt.subplots()
+                ax.hist(dataset_source[variables])
+                st.pyplot(fig)
+            if variables in dataset_object_variables:
+                height = st.selectbox('select x-axis',dataset_integer_variables)
+                fig,ax = plt.subplots()
+                ax.bar(dataset_source[variables],dataset_source[height])
+                st.pyplot(fig)
+    
+    if st.checkbox('Train models'):
         col1,col2 = st.beta_columns(2)
 
+    
         with col1:
             target_variable = st.text_input("Input target variable")
             target_variable = target_variable.lower()
+            
 
         with col2:
             size_train = np.round(st.number_input('Training size'),2)
