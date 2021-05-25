@@ -1,18 +1,10 @@
-## Feature engineering
-## predictive power score
-##Drop features
-## Finding best model
 
-
-#import lazypredict 
 import autogluon
 from autogluon.tabular import TabularDataset,TabularPredictor
 import streamlit as st
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
-#from lazypredict.Supervised import LazyClassifier,LazyRegressor
-from sklearn.datasets import load_breast_cancer
 import matplotlib.pyplot as plt
 
 def func_train_test_split(dataset,target_variable,size_train,size_test):
@@ -28,7 +20,7 @@ def func_train_test_split(dataset,target_variable,size_train,size_test):
 
 def func_classification(train_data,test_data,label):
     
-    predictor = TabularPredictor(label = label,eval_metric = 'f1',path = 'STREAMLIT/').fit(train_data)
+    predictor = TabularPredictor(label = label,eval_metric = 'f1').fit(train_data)
     
     #test_data = test_data.drop(label,axis = 1)
 
