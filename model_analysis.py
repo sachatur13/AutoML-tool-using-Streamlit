@@ -4,12 +4,14 @@
 ## Finding best model
 
 
-import lazypredict 
+#import lazypredict 
+import autogluon
+from autogluon.tabular import TabularDataset,TabularPredictor
 import streamlit as st
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
-from lazypredict.Supervised import LazyClassifier,LazyRegressor
+#from lazypredict.Supervised import LazyClassifier,LazyRegressor
 from sklearn.datasets import load_breast_cancer
 import matplotlib.pyplot as plt
 
@@ -24,13 +26,18 @@ def func_train_test_split(dataset,target_variable,size_train,size_test):
 
     return train_X,test_X,train_y,test_y
 
-def func_classification(train_X,test_X,train_y,test_y):
+def func_classification(train_data,test_data,label):
     
-    classifier = lazypredict.Supervised.LazyRegressor(verbose = 1,predictions = True)
-    model,predictions = classifier.fit(train_X,test_X,train_y,test_y)    
-    model = model.reset_index()
+    predictor = TabularPredictor(label = label,eval_metric = 'f1',path = 'STREAMLIT/').fit(train_data)
+    
+    #test_data = test_data.drop(label,axis = 1)
 
-    return model,predictions
+    st.write('Problem type: ',predictor.problem_type)
+    st.write('Features identified: ',predictor.feature_metadata)
+
+    model_leaderboard = predictor.leaderboard(test_data,silent = True)  
+    
+    return predictor,model_leaderboard
 
 def drop_variables(dataset):
 
@@ -78,6 +85,17 @@ if dataset is not None:
                 fig,ax = plt.subplots()
                 ax.bar(dataset_source[variables],dataset_source[height])
                 st.pyplot(fig)
+        
+        if visual_type == "Bi-variate":
+            st.write('Only numeric variables supported. Updates coming soon')
+            x = st.selectbox('Select variables to plot on x axis',dataset_integer_variables)
+            y = st.selectbox('Select variables to plot on y axis',dataset_integer_variables)
+
+            fig,ax = plt.subplots()
+            ax.scatter(dataset_source[x],dataset_source[y])
+            plt.xlabel(x)
+            plt.ylabel(y)
+            st.pyplot(fig)
     
     if st.checkbox('Train models'):
         col1,col2 = st.beta_columns(2)
@@ -86,6 +104,8 @@ if dataset is not None:
         with col1:
             target_variable = st.text_input("Input target variable")
             target_variable = target_variable.lower()
+            if st.checkbox('Convert target to object type?'):
+                dataset_source[target_variable] = dataset_source[target_variable].astype('O')
             
 
         with col2:
@@ -99,19 +119,26 @@ if dataset is not None:
 
             dataset_source = dataset_source.drop(high_frequency,axis = 1)
 
-            train_X,test_X,train_y,test_y = func_train_test_split(dataset_source,target_variable,size_train,size_test)
-
-            if st.checkbox('Analyze models'):
-                model,predictions = func_classification(train_X,test_X,train_y,test_y)
-                st.write(model)
-                selection = st.sidebar.selectbox('Select metric to visualize',['R-Squared','RMSE'])
-
-            if st.sidebar.checkbox('Plot metrics'):
-                plt.figure(figsize=(20,12))
+            test_data = dataset_source.sample(frac = size_test)
+            train_data = dataset_source.sample(frac = size_train)
+            
+            if st.checkbox('Start model analysis'):
+                predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
+                st.table(model_leaderboard[['model','score_test','score_val']])
+                
                 fig,ax = plt.subplots()
-                ax.scatter(model[selection],model['Model'])
+                ax.barh(model_leaderboard['model'],model_leaderboard['score_val'])
+                plt.xlabel('Evaluated Model')
+                plt.ylabel('Validation score')
                 st.pyplot(fig)
-
+                
+                trained_models = model_leaderboard['model']
+            
+            if st.checkbox('Load model'):
+                model_name = st.sidebar.selectbox('Trained models',trained_models)
+                
+                
+                st.write(pred)
 
 else:
-    st.write('Dataset not found')
+    st.write('Dataset not found. Please upload a dataset first in CSV format')
