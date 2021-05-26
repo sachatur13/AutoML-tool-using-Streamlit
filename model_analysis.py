@@ -125,6 +125,8 @@ if dataset is not None:
             train_data = dataset_source.sample(frac = size_train)
             
             if st.checkbox('Start model analysis'):
+                
+                st.spinner('Doing something really scientific! (Not really)')
                 predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
 
                 st.write('Problem type: ',predictor.problem_type)
