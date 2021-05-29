@@ -13,8 +13,39 @@ from sklearn.metrics import classification_report,confusion_matrix,f1_score
 
 st.set_page_config(layout='wide')
 
-st.header('Machine learning odel training and testing app')
+st.header('Machine learning model training and testing app')
 st.write('This app helps to train classification and regression(coming soon) in manual and automated mode. \nFor Manual classification tasks sklearn LogisticRegression and RandomForest are used in default settings. \n For automated model training [Autogluon](https://auto.gluon.ai/stable/index.html) library is leveraged.')
+
+
+@st.cache
+
+def manual_model_training(model_type,train_X,train_y,test_X,test_y):
+
+    if model_type == 'Logistic Regression':
+                        
+        model = LogisticRegression()
+                        
+        model.fit(train_X,train_y)
+                 
+        accuracy = np.round(model.score(test_X,test_y),2)*100
+
+        f1_score_value = np.round(f1_score(test_y,model.predict(test_X)),2)*100
+                    
+        confusion_matrix_return = confusion_matrix(test_y,model.predict(test_X))
+                
+    if model_type == 'Random Forest':
+
+        model = RandomForestClassifier()
+
+        model.fit(train_X,train_y)
+
+        accuracy = np.round(model.score(test_X,test_y),2)*100
+
+        f1_score_value = np.round(f1_score(test_y,model.predict(test_X)),2)*100
+                        
+        confusion_matrix_return = confusion_matrix(test_y,model.predict(test_X))
+
+    return accuracy,f1_score_value,confusion_matrix_return,model
 
 @st.cache()
 def func_train_test_split(dataset,target_variable,size_train,size_test):
@@ -27,6 +58,7 @@ def func_train_test_split(dataset,target_variable,size_train,size_test):
         train_X,test_X,train_y,test_y = train_test_split(X,y,test_size = size_test,random_state = 42)
 
     return train_X,test_X,train_y,test_y
+
 @st.cache()
 def func_classification(train_data,test_data,label):
     
@@ -57,30 +89,36 @@ col1,col2 = st.beta_columns(2)
 
 if dataset is not None:
 
+    try:
+
 #### Read dataset from upload
-    dataset_source = pd.read_csv(dataset)
+        dataset_source = pd.read_csv(dataset)
 
 #### Change column names to lower case
-    dataset_source.columns = dataset_source.columns.str.lower()
-    
+        dataset_source.columns = dataset_source.columns.str.lower()
 
-        
+        st.success('File upload successful')
+
+    except ValueError:
+        st.error('Something went wrong while uploading the dataset')
 else:
     st.write('Dataset not found. Please upload a dataset first in CSV format')
-    
   
 if dataset is not None:
-
 
 #### Identify integer, object and date type variables
     dataset_integer_variables = dataset_source.select_dtypes(include = ['int','int32','float','float32']).columns
     dataset_object_variables = dataset_source.select_dtypes(include = ['O']).columns
     datase_date_variables = dataset_source.select_dtypes(include = ['datetime']).columns
     
+
+### UI options for selecting operations
+
     st.header('Select operation')
 
     with st.beta_expander('Data preprocessing'):
         st.write('The preprocessing methods to be updated for better flow')
+
         col6,col7 = st.beta_columns(2)
 
         with col6:
@@ -119,9 +157,7 @@ if dataset is not None:
                                 dataset_source[k] = dataset_source[k].fillna(np.mean(dataset_source[k]))
 
                             for k in dataset_object_variables:
-                                dataset_source[k] = dataset_source[k].fillna(dataset_source[k].mode())
-                        
-                        
+                                dataset_source[k] = dataset_source[k].fillna(dataset_source[k].mode())     
                     
                 #except:
                  #  st.error('Something went wrong during data preprocessing')
@@ -133,21 +169,32 @@ if dataset is not None:
         datatype_selection = st.selectbox('Select datatype to convert to',['','Integer','Object'])
 
         if datatype_selection=="Integer":
+            
             try:
+                
                 for i in selected_columns:
+                    
                     if i not in dataset_integer_variables:
+                       
                         dataset_source[i] = dataset_source[i].astype('int')
                 
                     st.success('Data type conversion complete')
+
             except ValueError:
                 st.error('Seems there is a problem with your variable selection')
     
         if datatype_selection =="Object":
+            
             try:
+            
                 for i in selected_columns:
+                    
                     if i not in dataset_object_variables:
+                        
                         dataset_source[i] = dataset_source[i].astype('O')
+                    
                     st.success('Data type conversion complete')
+            
             except ValueError:
                 st.error('Seems there is a problem with your variable selection')
 
@@ -156,12 +203,15 @@ if dataset is not None:
     if dataset is not None:
             
         with st.beta_expander('View dataset details'):
-            st.header('Dataset details: ')
+            
             st.write('Number of records: ',dataset_source.shape[0])
+            
             st.write('Number of columns: ',dataset_source.shape[1])
 
             if st.checkbox('Show sample'):
+
                 record_count = st.slider('Select number of records to show',1,20)
+                
                 st.write(dataset_source.head(record_count))
 
 #### Data visualization section
@@ -174,21 +224,25 @@ if dataset is not None:
                 variables = st.selectbox('Select variables to plot',dataset_source.columns)
 
                 if variables in dataset_integer_variables:
+                
                     plt.figure(figsize = (10,10))
                     fig,ax = plt.subplots()
                     ax.hist(dataset_source[variables])
                     st.write(fig)
 
                 if variables in dataset_object_variables:
+                    
                     height = st.selectbox('select x-axis',dataset_integer_variables)
                     fig,ax = plt.subplots()
                     ax.bar(dataset_source[variables],dataset_source[height])
                     st.write(fig)
         
             if visual_type == "Bi-variate":
+                
                 st.write('Only numeric variables supported. Updates coming soon')
 
                 x = st.selectbox('Select variables to plot on x axis',dataset_integer_variables)
+                
                 y = st.selectbox('Select variables to plot on y axis',dataset_integer_variables)
 
                 fig,ax = plt.subplots()
@@ -201,6 +255,7 @@ if dataset is not None:
     with st.beta_expander('Model Training'):
 
         st.write('Select method for model training: ')
+
         training_method = st.radio('Manual Training',['Manual Training','Automated Model Training'])
         
         if training_method=='Manual Training':
@@ -210,60 +265,47 @@ if dataset is not None:
             col3,col4 = st.beta_columns(2)
 
             if problem_type =='Classification':
+
                 with col3:
+                
                     model_type = st.radio('Select training algorithm',['Logistic Regression','Random Forest'])
 
                     training_size = st.slider('Select Training set size',0.1,1.0,step=0.1,)
                     test_size = np.round(1-training_size,2)
 
                 with col4:
+                    
                     target = st.selectbox('Select Target variable',dataset_source.columns)
                     target = target.lower()
+                    
                     if st.checkbox('\n Convert target to object type?'):
+                    
                         dataset_source[target] = dataset_source[target].astype('O')
 
                     st.write('\n Training set  size (%) : ',training_size)
+                    
                     st.write('\n Test set size (%) :',test_size)
 
                     train_X,test_X,train_y,test_y = train_test_split(dataset_source.drop(target,axis = 1),dataset_source[target],test_size=test_size,random_state = 42)
                     
-                if model_type == 'Logistic Regression':
-                    
-                    if st.checkbox('Start Training'):
+                if st.checkbox('Start Training'):
+
+                    accuracy,f1_score,confusion_matrix,model = manual_model_training(model_type,train_X,train_y,test_X,test_y)
+
+                    st.write(model_type,' Accuracy: ',accuracy)
+                    st.write(model_type,' F1 Score: ',f1_score)
+                    st.table(confusion_matrix)
                         
-                        logistic_model = LogisticRegression()
+                    if st.checkbox('Export Model'):
                         
-                        logistic_model.fit(train_X,train_y)
-                 
-                        score = logistic_model.score(test_X,test_y)
-                        st.write('Test Score (Accuracy): ',np.round(score,2)*100)
-                        st.write('Test F1 Score: ',np.round(f1_score(test_y,logistic_model.predict(test_X)),2)*100)
-                        st.markdown('Confusion Matrix: ')
+                        import pickle
 
-                        st.table(confusion_matrix(test_y,logistic_model.predict(test_X)))
-                
-                if model_type == 'Random Forest':
-                    
-                    st.write('Random Forest')
-                    if st.checkbox('Start Training'):
+                        pickle.dump(model,open(model_type+'_export.sav','wb'))
 
-                        random_forest = RandomForestClassifier()
-
-                        random_forest.fit(train_X,train_y)
-
-                        score = random_forest.score(test_X,test_y)
-
-                        st.write('Test Score (Accuracy): ',np.round(score,2)*100)
-
-                        st.write('Test F1 Score: ',np.round(f1_score(test_y,random_forest.predict(test_X)),2)*100)
-                        
-                        st.markdown('Confusion Matrix: ')
-
-                        st.table(confusion_matrix(test_y,random_forest.predict(test_X)))               
 
         if training_method=='Automated Model Training':
 
-            st.markdown('This method uses [Autogluon](https://auto.gluon.ai/stable/index.html) library for automated model training')
+            st.markdown('This method uses [Autogluon](https://auto.gluon.ai/stable/index.html) library for automated model training and comparison')
     
             target_variable = st.text_input("Input target variable")
             target_variable = target_variable.lower()
@@ -290,9 +332,6 @@ if dataset is not None:
                 if st.checkbox('Start model analysis'):
                     predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
 
-                    #st.markdown('Problem type: ',predictor.problem_type)
-                    #st.markdown('Features identified: ',predictor.feature_metadata)
-                
                 if st.checkbox('View results as table'):
                     st.write(model_leaderboard[['model','score_val']])
 
@@ -306,26 +345,3 @@ if dataset is not None:
                     st.write(fig)
                 
                     trained_models = model_leaderboard['model']
-
-                    #with st.beta_expander('Make predictions with unlabelded input data or Test the models with your test data'):
-                     #   st.header('Upload test dataset')
-                      #  test_dataset = st.file_uploader("",key='Fileuploader01')
-                       # test_source = pd.read_csv(test_dataset)
-                        #test_source.columns = test_source.columns.str.lower()
-                        
-                        #if st.checkbox('Test models'):
-                         #   tested_models = predictor.leaderboard(test_source,silent = True)
-                          #  st.table(tested_models[['model','score_test','score_val']])
-
-                        ##if st.checkbox('Make predictions'):
-                        
-                          #  st.write('This uses the best performing model. Dynamic model selection coming soon')
-                           # st.progress(100)    
-                                              
-                            #test_source.drop([target_variable],axis = 1,inplace = True)
-                            #y_pred = predictor.predict(test_source)
-                            #test_source['Predicted'] = y_pred 
-                            #st.write(test_source)
-
-
-                
