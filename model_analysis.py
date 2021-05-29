@@ -7,11 +7,14 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.metrics import classification_report,confusion_matrix,f1_score
 
 st.set_page_config(layout='wide')
 
-st.header('Auto model analysis app')
-st.write('This app helps to identify the best performing model for a preprocessed dataset by leveraging [Autogluon](https://auto.gluon.ai/stable/index.html) library.')
+st.header('Machine learning odel training and testing app')
+st.write('This app helps to train classification and regression(coming soon) in manual and automated mode. \nFor Manual classification tasks sklearn LogisticRegression and RandomForest are used in default settings. \n For automated model training [Autogluon](https://auto.gluon.ai/stable/index.html) library is leveraged.')
 
 @st.cache()
 def func_train_test_split(dataset,target_variable,size_train,size_test):
@@ -68,29 +71,60 @@ else:
   
 if dataset is not None:
 
+
+#### Identify integer, object and date type variables
+    dataset_integer_variables = dataset_source.select_dtypes(include = ['int','int32','float','float32']).columns
+    dataset_object_variables = dataset_source.select_dtypes(include = ['O']).columns
+    datase_date_variables = dataset_source.select_dtypes(include = ['datetime']).columns
+    
     st.header('Select operation')
 
     with st.beta_expander('Data preprocessing'):
+        st.write('The preprocessing methods to be updated for better flow')
         col6,col7 = st.beta_columns(2)
 
         with col6:
-            operations = st.multiselect('',['Remove High frequency columns','Encode categorical columns'])
+            operations = st.multiselect('',['Remove High frequency columns','Encode categorical columns','Process Nulls'])
         
         with col7:
             for i in operations:
-                try:
-                    if i == 'Remove High frequency columns':
+                #try:
+                if i == 'Remove High frequency columns':
                     
-                        high_frequency = drop_variables(dataset_source)
-                        dataset_source = dataset_source.drop(high_frequency,axis = 1)
+                    high_frequency = drop_variables(dataset_source)
+
+                    dataset_source = dataset_source.drop(high_frequency,axis = 1)
+                    dataset_integer_variables = dataset_source.select_dtypes(include = ['int','int32','float','float32']).columns
+                    dataset_object_variables = dataset_source.select_dtypes(include = ['O']).columns
                 
-                    if i == 'Encode categorical columns':
+                if i == 'Encode categorical columns':
 
-                        dataset_source = pd.get_dummies(dataset_source)                    
+                    dataset_source = pd.get_dummies(dataset_source)               
 
+                if i == 'Process Nulls':
+                        
+                    Null_columns = dataset_source.isnull().mean()
+
+                    Null_process_method = st.multiselect('Select null imputation method: ',['Fill NA','Drop'])     
+
+                    for j in Null_process_method:
+                            
+                        if j=="Drop":
+
+                            dataset_source = dataset_source.dropna(thresh = 0.8,axis = 1)
+                        
+                        if j=="Fill NA":
+                            
+                            for k in dataset_integer_variables:
+                                dataset_source[k] = dataset_source[k].fillna(np.mean(dataset_source[k]))
+
+                            for k in dataset_object_variables:
+                                dataset_source[k] = dataset_source[k].fillna(dataset_source[k].mode())
+                        
+                        
                     
-                except:
-                    st.error('Something went wrong during data preprocessing')
+                #except:
+                 #  st.error('Something went wrong during data preprocessing')
         st.write('Updates Coming soon')
 
     with st.beta_expander('Data type conversion'):
@@ -117,11 +151,6 @@ if dataset is not None:
             except ValueError:
                 st.error('Seems there is a problem with your variable selection')
 
-#### Identify integer, object and date type variables
-        dataset_integer_variables = dataset_source.select_dtypes(include = ['int','int32','float','float32']).columns
-        dataset_object_variables = dataset_source.select_dtypes(include = ['O']).columns
-        datase_date_variables = dataset_source.select_dtypes(include = ['datetime']).columns
-    
 
 #### Dataset details section    
     if dataset is not None:
@@ -191,22 +220,56 @@ if dataset is not None:
                     target = st.selectbox('Select Target variable',dataset_source.columns)
                     target = target.lower()
                     if st.checkbox('\n Convert target to object type?'):
-                        dataset_source[target_variable] = dataset_source[target_variable].astype('O')
+                        dataset_source[target] = dataset_source[target].astype('O')
 
                     st.write('\n Training set  size (%) : ',training_size)
-                    st.write('\n Test set size (%) :',test_size)          
-           
+                    st.write('\n Test set size (%) :',test_size)
 
-            st.write(problem_type)
+                    train_X,test_X,train_y,test_y = train_test_split(dataset_source.drop(target,axis = 1),dataset_source[target],test_size=test_size,random_state = 42)
+                    
+                if model_type == 'Logistic Regression':
+                    
+                    if st.checkbox('Start Training'):
+                        
+                        logistic_model = LogisticRegression()
+                        
+                        logistic_model.fit(train_X,train_y)
+                 
+                        score = logistic_model.score(test_X,test_y)
+                        st.write('Test Score (Accuracy): ',np.round(score,2)*100)
+                        st.write('Test F1 Score: ',np.round(f1_score(test_y,logistic_model.predict(test_X)),2)*100)
+                        st.markdown('Confusion Matrix: ')
+
+                        st.table(confusion_matrix(test_y,logistic_model.predict(test_X)))
+                
+                if model_type == 'Random Forest':
+                    
+                    st.write('Random Forest')
+                    if st.checkbox('Start Training'):
+
+                        random_forest = RandomForestClassifier()
+
+                        random_forest.fit(train_X,train_y)
+
+                        score = random_forest.score(test_X,test_y)
+
+                        st.write('Test Score (Accuracy): ',np.round(score,2)*100)
+
+                        st.write('Test F1 Score: ',np.round(f1_score(test_y,random_forest.predict(test_X)),2)*100)
+                        
+                        st.markdown('Confusion Matrix: ')
+
+                        st.table(confusion_matrix(test_y,random_forest.predict(test_X)))               
 
         if training_method=='Automated Model Training':
 
-            st.markdown('This method uses [Autogluon](https://auto.gluon.ai/stable/index.html) library for automated model training    ')
+            st.markdown('This method uses [Autogluon](https://auto.gluon.ai/stable/index.html) library for automated model training')
     
             target_variable = st.text_input("Input target variable")
             target_variable = target_variable.lower()
             
             if st.checkbox('Convert target to object type?'):
+
                 dataset_source[target_variable] = dataset_source[target_variable].astype('O')          
             
             size_train = np.round(st.number_input('Training size'),2)
@@ -227,11 +290,11 @@ if dataset is not None:
                 if st.checkbox('Start model analysis'):
                     predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
 
-                    st.markdown('Problem type: ',predictor.problem_type)
-                    st.markdown('Features identified: ',predictor.feature_metadata)
+                    #st.markdown('Problem type: ',predictor.problem_type)
+                    #st.markdown('Features identified: ',predictor.feature_metadata)
                 
                 if st.checkbox('View results as table'):
-                    st.write(model_leaderboard[['model','score_test','score_val']])
+                    st.write(model_leaderboard[['model','score_val']])
 
 #### Plot model output
                 if st.checkbox('View plots'): 
