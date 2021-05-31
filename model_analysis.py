@@ -7,9 +7,10 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression,LinearRegression
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
-from sklearn.metrics import classification_report,confusion_matrix,f1_score
+from sklearn.metrics import classification_report,confusion_matrix,f1_score,r2_score,mean_absolute_error
+import ppscore as pps
 
 st.set_page_config(layout='wide')
 
@@ -17,9 +18,15 @@ st.header('Machine learning model training and testing app')
 st.write('This app helps to train classification and regression(coming soon) in manual and automated mode. \nFor Manual classification tasks sklearn LogisticRegression and RandomForest are used in default settings. \n For automated model training [Autogluon](https://auto.gluon.ai/stable/index.html) library is leveraged.')
 
 
-@st.cache
+@st.cache()
+def get_predictive_power_score(dataset,target):
 
-def manual_model_training(model_type,train_X,train_y,test_X,test_y):
+    predictive_power = pps.predictors(dataset,target)
+
+    return predictive_power
+
+@st.cache()
+def manual_model_training_classification(model_type,train_X,train_y,test_X,test_y):
 
     if model_type == 'Logistic Regression':
                         
@@ -47,6 +54,29 @@ def manual_model_training(model_type,train_X,train_y,test_X,test_y):
 
     return accuracy,f1_score_value,confusion_matrix_return,model
 
+
+@st.cache()
+
+def manual_model_regression(model_type,train_X,train_y,test_X,test_y):
+
+    if model_type == 'Linear Regression':
+
+        reg_model = LinearRegression()
+                    
+        reg_model.fit(train_X,train_y)    
+                        
+        score = r2_score(test_y,reg_model.predict(test_X))
+    
+    if model_type == 'Random Forest':
+
+        reg_model = RandomForestRegressor()
+
+        reg_model.fit(train_X,train_y)
+
+        score = mean_absolute_error(test_y,reg_model.predict(test_X))
+
+    return reg_model,np.round(score,2)
+                        
 @st.cache()
 def func_train_test_split(dataset,target_variable,size_train,size_test):
 
@@ -251,6 +281,20 @@ if dataset is not None:
                 plt.ylabel(y)
                 st.pyplot(fig)
 
+    with st.beta_expander('Predictive Power'):
+
+        target_var = st.selectbox('Select Target Variable',dataset_source.columns)
+
+        predictive_p = get_predictive_power_score(dataset_source,target_var)
+
+        st.table(predictive_p)
+
+        fig,ax = plt.subplots()
+        ax.barh(predictive_p['x'],predictive_p['ppscore'])
+        plt.xlabel('Variable')
+        plt.ylabel('Predictive Score')
+        st.pyplot(fig)
+
 #### Model training section    
     with st.beta_expander('Model Training'):
 
@@ -264,6 +308,38 @@ if dataset is not None:
 
             col3,col4 = st.beta_columns(2)
 
+            if problem_type == 'Regression':
+
+                with col3:
+                    
+                    model_type = st.radio('Select training algorithm',['Linear Regression','Random Forest'])
+                    
+                    training_size = st.slider('Select Training set size',0.1,1.0,step=0.1,)
+                    
+                    test_size = np.round(1-training_size,2)
+
+                with col4:
+
+                    target = st.selectbox('Select Target variable (Integer only)',dataset_integer_variables)
+
+                    st.write('\n Training set  size (%) : ',training_size)
+                    
+                    st.write('\n Test set size (%) :',test_size)
+
+                    train_X,test_X,train_y,test_y = train_test_split(dataset_source.drop(target,axis = 1),dataset_source[target],test_size=test_size,random_state = 42)
+                
+                if st.checkbox('Start Training'):
+
+                    model,score = manual_model_regression(model_type,train_X,train_y,test_X,test_y)
+
+                    if model_type == 'Linear Regression':
+
+                        st.write('\n Linear Regression R2 Value: ',score)
+                
+                    if model_type == 'Random Forest':
+
+                        st.write('\n Random Forest MAE Value: ',score)
+
             if problem_type =='Classification':
 
                 with col3:
@@ -271,6 +347,7 @@ if dataset is not None:
                     model_type = st.radio('Select training algorithm',['Logistic Regression','Random Forest'])
 
                     training_size = st.slider('Select Training set size',0.1,1.0,step=0.1,)
+                    
                     test_size = np.round(1-training_size,2)
 
                 with col4:
@@ -290,7 +367,7 @@ if dataset is not None:
                     
                 if st.checkbox('Start Training'):
 
-                    accuracy,f1_score,confusion_matrix,model = manual_model_training(model_type,train_X,train_y,test_X,test_y)
+                    accuracy,f1_score,confusion_matrix,model = manual_model_training_classification(model_type,train_X,train_y,test_X,test_y)
 
                     st.write(model_type,' Accuracy: ',accuracy)
                     st.write(model_type,' F1 Score: ',f1_score)
@@ -325,7 +402,7 @@ if dataset is not None:
                 high_frequency = drop_variables(dataset_source)
                 dataset_source = dataset_source.drop(high_frequency,axis = 1)
 
-#### Train and testing set creation
+    #### Train and testing set creation
                 test_data = dataset_source.sample(frac = size_test)
                 train_data = dataset_source.sample(frac = size_train)
             
