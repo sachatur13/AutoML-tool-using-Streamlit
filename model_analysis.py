@@ -287,12 +287,13 @@ if dataset is not None:
 
         predictive_p = get_predictive_power_score(dataset_source,target_var)
 
-        st.table(predictive_p)
-
-        fig,ax = plt.subplots()
+        st.dataframe(predictive_p)
+        fig_width = st.slider('Adjust Figure width',1.0,25.0,0.1)
+        fig_height = st.slider('Adjust Figure height',1.0,25.0,0.1)
+        fig,ax = plt.subplots(figsize =(fig_width,fig_height))
         ax.barh(predictive_p['x'],predictive_p['ppscore'])
-        plt.xlabel('Variable')
-        plt.ylabel('Predictive Score')
+        plt.xlabel('Predictive Score')
+        plt.ylabel('Variable')
         st.pyplot(fig)
 
 #### Model training section    
