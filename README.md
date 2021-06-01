@@ -1,4 +1,5 @@
-# Modellingtool_Streamlit_LazyPredict
+# Modeling tool using Streamlit / Sklearn / Pandas / Autogluon
+
 Creating a simple model analysis tool using 
 - Streamlit framework as UI
 - Scikit-learn for manual machine learning models
