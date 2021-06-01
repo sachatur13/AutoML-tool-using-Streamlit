@@ -58,7 +58,6 @@ def manual_model_training_classification(model_type,train_X,train_y,test_X,test_
 
 
 @st.cache()
-
 def manual_model_regression(model_type,train_X,train_y,test_X,test_y):
 
     if model_type == 'Linear Regression':
@@ -134,7 +133,7 @@ if dataset is not None:
     except ValueError:
         st.error('Something went wrong while uploading the dataset')
 else:
-    st.write('Dataset not found. Please upload a dataset first in CSV format')
+    st.markdown('### Dataset not found. Please upload a dataset first in CSV format')
   
 if dataset is not None:
 
@@ -189,9 +188,11 @@ if dataset is not None:
             
         with st.beta_expander('View dataset details'):
             
-            st.write('Number of records: ',input_dataset.shape[0])
+            st.markdown('#### Number of records: ')
+            st.write(input_dataset.shape[0])
             
-            st.write('Number of columns: ',input_dataset.shape[1])
+            st.markdown('#### Number of columns: ')
+            st.write(input_dataset.shape[1])
 
             if st.checkbox('Show sample'):
 
@@ -202,14 +203,19 @@ if dataset is not None:
 #### Data visualization section
         with st.beta_expander('Data Visualization'):
 
-            visual_type = st.radio('Visualize data',('Univariate','Bi-variate'))
+            st.markdown('#### Select visualization type')
+            visual_type = st.radio('',('Univariate','Bi-variate'))
 
             if visual_type == 'Univariate':
                 
-                variables = st.selectbox('Select variables to plot',input_dataset.columns)
+                st.markdown('#### Select variables to plot')
+                variables = st.selectbox('',input_dataset.columns)
 
-                fig_w = st.slider('Adjust Figure width',5,20,key='st_1')
-                fig_h = st.slider('Adjust Figure height',2,20,key='st_2')
+                st.markdown('#### Adjust Figure width')
+                fig_w = st.slider('',5,20,key='st_1')
+                
+                st.markdown('#### Adjust Figure height')
+                fig_h = st.slider('',2,20,key='st_2')
 
                 if variables in dataset_integer_variables:
                 
@@ -244,12 +250,13 @@ if dataset is not None:
 
         predictive_p,high_predictive_variables = get_predictive_power_score(input_dataset,target_var)
 
-        st.write('Variable ',high_predictive_variables['x'][0],' have highest predictability based on ppscore method')
+        st.write('Variable ',high_predictive_variables['x'].unique(),' have highest predictability based on ppscore method')
 
         if st.checkbox('View full table'):
             st.dataframe(predictive_p)
         
         if st.checkbox('View as plot instead'):
+
             fig_w_pps = st.slider('Adjust Figure width',5,20,key='st_3')
             fig_h_pps = st.slider('Adjust Figure height',2,20,key='st_4')
         
@@ -259,10 +266,33 @@ if dataset is not None:
             plt.xlabel('Predictive Score')
             plt.ylabel('Variable')
             st.pyplot(fig)
+        
+        selected_features =  st.checkbox('Do you want to use these variables for next steps?')
+        
+        if selected_features==True:
+
+            high_pred = list(high_predictive_variables['x'].unique())
+            
+            high_pred.append(target_var)
+
+            updated_dataset_with_selected_features = input_dataset[high_pred]
+
+            st.write(updated_dataset_with_selected_features)
+
+        
+        
 
 #### Model training section    
 
     with st.beta_expander('Data preprocessing'):
+
+        if selected_features==True:
+
+            working_dataset = updated_dataset_with_selected_features
+        
+        else:
+
+            working_dataset = input_dataset
 
         st.write('The preprocessing methods to be updated for better flow')
 
@@ -276,20 +306,20 @@ if dataset is not None:
                 #try:
                 if i == 'Remove High frequency columns':
                     
-                    high_frequency = drop_variables(input_dataset)
+                    high_frequency = drop_variables(working_dataset)
 
-                    input_dataset = input_dataset.drop(high_frequency,axis = 1)
+                    working_dataset = working_dataset.drop(high_frequency,axis = 1)
                     
-                    dataset_integer_variables = input_dataset.select_dtypes(include = ['int','int32','float','float32']).columns
-                    dataset_object_variables = input_dataset.select_dtypes(include = ['O']).columns
+                    dataset_integer_variables = working_dataset.select_dtypes(include = ['int','int32','float','float32']).columns
+                    dataset_object_variables = working_dataset.select_dtypes(include = ['O']).columns
                 
                 if i == 'Encode categorical columns':
 
-                    input_dataset = pd.get_dummies(input_dataset)               
+                    working_dataset = pd.get_dummies(working_dataset)               
 
                 if i == 'Process Nulls':
                         
-                    Null_columns = input_dataset.isnull().mean()
+                    Null_columns = working_dataset.isnull().mean()
 
                     Null_process_method = st.multiselect('Select null imputation method: ',['Fill NA','Drop'])     
 
@@ -297,15 +327,15 @@ if dataset is not None:
                             
                         if j=="Drop":
 
-                            input_dataset = input_dataset.dropna(thresh = 0.8,axis = 1)
+                            working_dataset = working_dataset.dropna(thresh = 0.8,axis = 1)
                         
                         if j=="Fill NA":
                             
                             for k in dataset_integer_variables:
-                                input_dataset[k] = input_dataset[k].fillna(np.mean(input_dataset[k]))
+                                working_dataset[k] = working_dataset[k].fillna(np.mean(working_dataset[k]))
 
                             for k in dataset_object_variables:
-                                input_dataset[k] = input_dataset[k].fillna(input_dataset[k].mode())     
+                                working_dataset[k] = working_dataset[k].fillna(working_dataset[k].mode())     
                     
                 #except:
                  #  st.error('Something went wrong during data preprocessing')
@@ -314,6 +344,8 @@ if dataset is not None:
     
     with st.beta_expander('Model Training'):
 
+        modeling_dataset = working_dataset
+        st.write(working_dataset)
         st.write('Select method for model training: ')
 
         training_method = st.radio('Manual Training',['Manual Training','Automated Model Training'])
@@ -336,13 +368,13 @@ if dataset is not None:
 
                 with col4:
 
-                    target = st.selectbox('Select Target variable (Integer only)',dataset_integer_variables)
+                    target = st.selectbox('Select Target variable (Integer only)',modeling_dataset.columns)
 
                     st.write('\n Training set  size (%) : ',training_size)
                     
                     st.write('\n Test set size (%) :',test_size)
 
-                    train_X,test_X,train_y,test_y = train_test_split(input_dataset.drop(target,axis = 1),input_dataset[target],test_size=test_size,random_state = 42)
+                    train_X,test_X,train_y,test_y = train_test_split(modeling_dataset.drop(target,axis = 1),modeling_dataset[target],test_size=test_size,random_state = 42)
                 
                 if st.checkbox('Start Training'):
 
@@ -368,18 +400,18 @@ if dataset is not None:
 
                 with col4:
                     
-                    target = st.selectbox('Select Target variable',input_dataset.columns)
+                    target = st.selectbox('Select Target variable',modeling_dataset.columns)
                     target = target.lower()
                     
                     if st.checkbox('\n Convert target to object type?'):
                     
-                        input_dataset[target] = input_dataset[target].astype('O')
+                        modeling_dataset[target] = modeling_dataset[target].astype('O')
 
                     st.write('\n Training set  size (%) : ',training_size)
                     
                     st.write('\n Test set size (%) :',test_size)
 
-                    train_X,test_X,train_y,test_y = train_test_split(input_dataset.drop(target,axis = 1),input_dataset[target],test_size=test_size,random_state = 42)
+                    train_X,test_X,train_y,test_y = train_test_split(modeling_dataset.drop(target,axis = 1),modeling_dataset[target],test_size=test_size,random_state = 42)
                     
                 if st.checkbox('Start Training'):
 
@@ -405,7 +437,7 @@ if dataset is not None:
             
             if st.checkbox('Convert target to object type?'):
 
-                input_dataset[target_variable] = input_dataset[target_variable].astype('O')          
+                modeling_dataset[target_variable] = modeling_dataset[target_variable].astype('O')          
             
             size_train = np.round(st.number_input('Training size'),2)
             size_test = np.round(1-(size_train),2)
@@ -414,19 +446,16 @@ if dataset is not None:
 
             if size_train>0:
 
-    #### Drop high frequency variables
-                high_frequency = drop_variables(input_dataset)
-                input_dataset = input_dataset.drop(high_frequency,axis = 1)
-
     #### Train and testing set creation
-                test_data = input_dataset.sample(frac = size_test)
-                train_data = input_dataset.sample(frac = size_train)
+
+                test_data = modeling_dataset.sample(frac = size_test)
+                train_data = modeling_dataset.sample(frac = size_train)
             
                 if st.checkbox('Start model analysis'):
                     predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
 
-                if st.checkbox('View results as table'):
-                    st.write(model_leaderboard[['model','score_val']])
+                    st.markdown('## Resulting model leaderboard')
+                    st.dataframe(model_leaderboard[['model','score_val']].sort_values('score_val',ascending = False))
 
 #### Plot model output
                 if st.checkbox('View plots'): 
