@@ -11,7 +11,7 @@ from sklearn.linear_model import LogisticRegression,LinearRegression
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
 from sklearn.metrics import classification_report,confusion_matrix,f1_score,r2_score,mean_absolute_error
 import ppscore as pps
-
+#import modules.py as md
 st.set_page_config(layout='wide')
 
 st.header('Machine learning model training and testing app')
@@ -111,6 +111,31 @@ def drop_variables(dataset):
 
     return high_frequency
 
+def feature_generator(dataset,selected_features):
+
+    date_fields = dataset.select_dtypes(['datetime','datetime64']).columns
+
+    for i in date_fields:
+
+        for j in selected_features:
+            
+            if j == 'Year':
+                dataset[i+'_Year'] = dataset[i].dt.year
+            if j == 'Month':
+                dataset[i+'_Month'] = dataset[i].dt.month
+            if j == 'Quarter':
+                dataset[i+'_Quarter'] = dataset[i].dt.quarter
+            if j == 'Week of Year':
+                dataset[i+'_WeekofYear'] = dataset[i].dt.weekofyear
+            if j == 'Day of Week':
+                dataset[i+'_DayofWeek'] = dataset[i].dt.dayofweek
+            if j == 'Weekday Name':
+                dataset[i+'_WeekdayName'] = dataset[i].dt.day_name()
+    
+    dataframe_with_generated_features = dataset.drop(date_fields,axis = 1)
+
+    return dataframe_with_generated_features
+
 
 st.header('Upload dataset')
 dataset = st.file_uploader("",)
@@ -140,7 +165,7 @@ if dataset is not None:
 #### Identify integer, object and date type variables
     dataset_integer_variables = input_dataset.select_dtypes(include = ['int','int32','float','float32']).columns
     dataset_object_variables = input_dataset.select_dtypes(include = ['O']).columns
-    datase_date_variables = input_dataset.select_dtypes(include = ['datetime']).columns
+    dataset_date_variables = input_dataset.select_dtypes(include = ['datetime']).columns
     
 
 ### UI options for selecting operations
@@ -150,8 +175,23 @@ if dataset is not None:
     with st.beta_expander('Data type conversion'):
         
         selected_columns = st.multiselect('Select features for datatype conversion',input_dataset.columns)
-        datatype_selection = st.selectbox('Select datatype to convert to',['','Integer','Object'])
+        datatype_selection = st.selectbox('Select datatype to convert to',['','Integer','Object','Datetime'])
 
+        if datatype_selection=="Datetime":
+            
+            try:
+                
+                for i in selected_columns:
+                    
+                    if i not in dataset_date_variables:
+                       
+                        input_dataset[i] = pd.to_datetime(input_dataset[i])
+                
+                    st.success('Data type conversion complete')
+
+            except ValueError:
+                st.error('Seems there is a problem with your variable selection')
+    
         if datatype_selection=="Integer":
             
             try:
@@ -279,11 +319,6 @@ if dataset is not None:
 
             st.write(updated_dataset_with_selected_features)
 
-        
-        
-
-#### Model training section    
-
     with st.beta_expander('Data preprocessing'):
 
         if selected_features==True:
@@ -336,7 +371,17 @@ if dataset is not None:
 
                             for k in dataset_object_variables:
                                 working_dataset[k] = working_dataset[k].fillna(working_dataset[k].mode())     
-                    
+        
+        
+        st.markdown('#### Generate date features: ')
+
+        date_feature_generator = st.multiselect('',[None,'Year','Month','Quarter','Week of Year','Day of Week','Weekday Name'])
+
+        if date_feature_generator is not None:
+
+            working_dataset = feature_generator(working_dataset,date_feature_generator)
+
+        st.write(working_dataset.head(2))
                 #except:
                  #  st.error('Something went wrong during data preprocessing')
         st.write('Updates Coming soon')
