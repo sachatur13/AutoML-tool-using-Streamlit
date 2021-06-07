@@ -354,13 +354,13 @@ if dataset is not None:
 
                 with col4:
 
-                    target = st.selectbox('Select Target variable (Integer only)',modeling_dataset.columns)
+                    target = st.selectbox('Select Target variable (Integer only)',working_dataset.columns)
 
                     st.write('\n Training set  size (%) : ',training_size)
                     
                     st.write('\n Test set size (%) :',test_size)
 
-                    train_X,test_X,train_y,test_y = train_test_split(modeling_dataset.drop(target,axis = 1),modeling_dataset[target],test_size=test_size,random_state = 42)
+                    train_X,test_X,train_y,test_y = train_test_split(working_dataset.drop(target,axis = 1),working_dataset[target],test_size=test_size,random_state = 42)
                 
                 if st.checkbox('Start Training'):
 
@@ -386,18 +386,18 @@ if dataset is not None:
 
                 with col4:
                     
-                    target = st.selectbox('Select Target variable',modeling_dataset.columns)
+                    target = st.selectbox('Select Target variable',working_dataset.columns)
                     target = target.lower()
                     
                     if st.checkbox('\n Convert target to object type?'):
                     
-                        modeling_dataset[target] = modeling_dataset[target].astype('O')
+                        modeling_dataset[target] = working_dataset[target].astype('O')
 
                     st.write('\n Training set  size (%) : ',training_size)
                     
                     st.write('\n Test set size (%) :',test_size)
 
-                    train_X,test_X,train_y,test_y = train_test_split(modeling_dataset.drop(target,axis = 1),modeling_dataset[target],test_size=test_size,random_state = 42)
+                    train_X,test_X,train_y,test_y = train_test_split(working_dataset.drop(target,axis = 1),working_dataset[target],test_size=test_size,random_state = 42)
                     
                 if st.checkbox('Start Training'):
 
@@ -421,12 +421,12 @@ if dataset is not None:
             col5,col6 = st.beta_columns(2)
             
             with col5:
-                target_variable = st.selectbox("Select target variable",modeling_dataset.columns)
+                target_variable = st.selectbox("Select target variable",working_dataset.columns)
                 target_variable = target_variable.lower()
             
                 if st.checkbox('Convert target to object type?'):
 
-                    modeling_dataset[target_variable] = modeling_dataset[target_variable].astype('O')          
+                    modeling_dataset[target_variable] = working_dataset[target_variable].astype('O')          
             
             with col6:
 
@@ -437,8 +437,8 @@ if dataset is not None:
 
             if size_train>0:
 
-                test_data = modeling_dataset.sample(frac = size_test)
-                train_data = modeling_dataset.sample(frac = size_train)
+                test_data = working_dataset.sample(frac = size_test)
+                train_data = working_dataset.sample(frac = size_train)
             
                 if st.checkbox('Start model analysis'):
                     progress_bar = st.progress(0)
