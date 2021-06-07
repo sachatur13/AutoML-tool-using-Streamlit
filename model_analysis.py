@@ -191,22 +191,22 @@ if dataset is not None:
                 ax.bar(input_dataset[variables],input_dataset[height])
                 st.pyplot(fig)
         
-            if visual_type == "Bi-variate":
+        if visual_type == "Bi-variate":
                 
-                st.write('Only numeric variables supported. Updates coming soon')
+            st.write('Only numeric variables supported. Updates coming soon')
 
-                x = st.selectbox('Select variables to plot on x axis',dataset_integer_variables)
+            x = st.selectbox('Select variables to plot on x axis',dataset_integer_variables)
                 
-                y = st.selectbox('Select variables to plot on y axis',dataset_integer_variables)
+            y = st.selectbox('Select variables to plot on y axis',dataset_integer_variables)
 
-                fig_w_b = st.slider('Adjust Figure width',5,20,key='st_5')
-                fig_h_b = st.slider('Adjust Figure height',2,20,key='st_6')
+            fig_w_b = st.slider('Adjust Figure width',5,20,key='st_5')
+            fig_h_b = st.slider('Adjust Figure height',2,20,key='st_6')
         
-                fig,ax = plt.subplots(figsize = (fig_w_b,fig_h_b))
-                ax.scatter(input_dataset[x],input_dataset[y])
-                plt.xlabel(x)
-                plt.ylabel(y)
-                st.pyplot(fig)
+            fig,ax = plt.subplots(figsize = (fig_w_b,fig_h_b))
+            ax.scatter(input_dataset[x],input_dataset[y])
+            plt.xlabel(x)
+            plt.ylabel(y)
+            st.pyplot(fig)
 
     with st.beta_expander('Feature Generation'):
 
