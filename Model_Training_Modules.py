@@ -79,3 +79,13 @@ def func_classification(train_data,test_data,label):
     
     return predictor,model_leaderboard
 
+def func_regression(train_data,test_data,label):
+    
+    predictor = TabularPredictor(label = label,eval_metric = 'mean_absolute_error').fit(train_data)
+    
+    #test_data = test_data.drop(label,axis = 1)
+
+    model_leaderboard = predictor.leaderboard(test_data,silent = True)  
+    
+    return predictor,model_leaderboard
+
