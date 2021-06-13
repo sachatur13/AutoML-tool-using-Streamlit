@@ -14,16 +14,20 @@ import ppscore as pps
 
 ## Import modules from python scripts
 from Preprocessing_Modules import get_predictive_power_score,drop_variables,feature_generator,aggregated_data
-from Model_Training_Modules import manual_model_training_classification,manual_model_training_regression,func_train_test_split,func_classification
+from Model_Training_Modules import manual_model_training_classification,manual_model_training_regression,func_train_test_split,func_classification,func_regression
 
 
 st.set_page_config(layout='wide')
 
-st.header('Machine learning model training and testing app')
+st.header('                                                    Open source Machine Learning app')
+
 st.sidebar.markdown('This app helps to train classification and regression(coming soon) in manual and automated mode. For Manual classification tasks sklearn LogisticRegression and RandomForest are used in default settings. For automated model training [Autogluon](https://auto.gluon.ai/stable/index.html) library is used.')
-st.sidebar.markdown('### What can you do currently?')
-with st.sidebar.beta_expander(''):
+
+with st.sidebar.beta_expander('Features'):
     
+    st.markdown('#### View dataset details: ')
+    st.markdown('- Use sample datasets (Iris, Boston) ')
+    st.markdown('- Upload CSV file ')
     st.markdown('#### View dataset details: ')
     st.markdown('- Row and Column counts')
     st.markdown('- View sample data rows upto 20')
@@ -46,52 +50,62 @@ with st.sidebar.beta_expander(''):
     st.markdown(' - Manual (Classification / Regression) using Linear regression, Logistic regression and RandomForest')
     st.markdown('- Automated, using Autogluon')
 
-st.sidebar.markdown('#### What is upcoming?')
+with st.sidebar.beta_expander('Upcoming'):
+    st.markdown('- LIME prediction explanation')
 
+st.subheader('Select options: ')
 
+with st.beta_expander('Data selection'):
 
+    st.markdown('Select option to upload your own dataset in csv format or select from existing sample datasets.')
+    st.markdown('Iris dataset is used for Classification and Boston dataset is used for Regression tasks.')
 
+    option = st.selectbox('',['Sample datasets','Upload CSV'])
 
+    if option == 'Sample datasets':
 
-st.subheader('Upload dataset')
+        st.markdown('Select problem: ')
+        option_prob = st.selectbox('',['Regression','Classification'])
 
+        if option_prob == 'Regression':
+            from sklearn.datasets import load_boston
+            dataset = 'temp'
+            dataset_x = load_boston()
+            input_dataset = pd.DataFrame(dataset_x.data,columns= dataset_x.feature_names)
+            input_dataset['target'] = dataset_x.target
+            input_dataset.columns = input_dataset.columns.str.lower()
+        if option_prob == 'Classification':
+            from sklearn.datasets import load_iris
+            dataset = 'temp'
+            dataset_x = load_iris()
+            input_dataset = pd.DataFrame(dataset_x.data,columns= dataset_x.feature_names)
+            input_dataset['target'] = dataset_x.target
+            input_dataset.columns = input_dataset.columns.str.lower()
 
+    if option == 'Upload CSV':
 
-dataset = st.file_uploader("",)
+        dataset = st.file_uploader("",)
 
-col1,col2 = st.beta_columns(2)
+       
+        if dataset is not None:
 
-
-if dataset is not None:
-
-    try:
+            try:
 
 #### Read dataset from upload
-        input_dataset = pd.read_csv(dataset)
+                input_dataset = pd.read_csv(dataset)
 
 #### Change column names to lower case
-        input_dataset.columns = input_dataset.columns.str.lower()
+                st.success('File upload successful')
 
-        st.success('File upload successful')
-
-    except ValueError:
-        st.error('Something went wrong while uploading the dataset')
-else:
-    st.markdown('### Dataset not found. Please upload a dataset first in CSV format')
-  
-if dataset is not None:
-
-#### Identify integer, object and date type variables
-    dataset_integer_variables = input_dataset.select_dtypes(include = ['int','int32','float','float32']).columns
-    dataset_object_variables = input_dataset.select_dtypes(include = ['O']).columns
-    dataset_date_variables = input_dataset.select_dtypes(include = ['datetime']).columns
+            except ValueError:
+                st.error('Something went wrong while uploading the dataset')
+        else:
+            st.markdown('### Dataset not found. Please upload a dataset first in CSV format')
     
 
-
-
-
-
-    #### Dataset details section    
+st.markdown('------------------------------------------------------------------------------------------------------------')
+    
+#### Dataset details section    
 if dataset is not None:
             
     with st.beta_expander('View dataset details'):
@@ -107,12 +121,20 @@ if dataset is not None:
             record_count = st.slider('Select number of records to show',1,20)
                 
             st.write(input_dataset.head(record_count))
-
+    
+    st.markdown('------------------------------------------------------------------------------------------------------------')
 
     with st.beta_expander('Data type conversion'):
+
+        dataset_integer_variables = input_dataset.select_dtypes(['int','float']).columns
+        dataset_object_variables = input_dataset.select_dtypes('O').columns
+        dataset_date_variables = input_dataset.select_dtypes(['datetime']).columns
         
         selected_columns = st.multiselect('Select features for datatype conversion',input_dataset.columns)
+
         datatype_selection = st.selectbox('Select datatype to convert to',['','Integer','Object','Datetime'])
+        
+        feature_converted_dataset = input_dataset
 
         if datatype_selection=="Datetime":
             
@@ -122,11 +144,13 @@ if dataset is not None:
                     
                     if i not in dataset_date_variables:
                        
-                        input_dataset[i] = pd.to_datetime(input_dataset[i])
+                        feature_converted_dataset[i] = pd.to_datetime(feature_converted_dataset[i])
                 
                     st.success('Data type conversion complete')
 
+
             except ValueError:
+                
                 st.error('Seems there is a problem with your variable selection')
     
         if datatype_selection=="Integer":
@@ -137,7 +161,7 @@ if dataset is not None:
                     
                     if i not in dataset_integer_variables:
                        
-                        input_dataset[i] = input_dataset[i].astype('int')
+                        feature_converted_dataset[i] = feature_converted_dataset[i].astype('int')
                 
                     st.success('Data type conversion complete')
 
@@ -152,7 +176,7 @@ if dataset is not None:
                     
                     if i not in dataset_object_variables:
                         
-                        input_dataset[i] = input_dataset[i].astype('O')
+                        feature_converted_dataset[i] = feature_converted_dataset[i].astype('O')
                     
                     st.success('Data type conversion complete')
             
@@ -160,17 +184,25 @@ if dataset is not None:
                 st.error('Seems there is a problem with your variable selection')
 
 
-
+    st.markdown('------------------------------------------------------------------------------------------------------------')
 #### Data visualization section
     with st.beta_expander('Data Visualization'):
 
         st.markdown('#### Select visualization type')
         visual_type = st.radio('',('Univariate','Bi-variate'))
 
+        if feature_converted_dataset is not None:
+
+            visualization_dataset = feature_converted_dataset
+        
+        else:
+
+            visualization_dataset = input_dataset
+
         if visual_type == 'Univariate':
                 
             st.markdown('#### Select variables to plot')
-            variables = st.selectbox('',input_dataset.columns)
+            variables = st.selectbox('',visualization_dataset.columns)
 
             st.markdown('#### Adjust Figure width')
             fig_w = st.slider('',5,20,key='st_1')
@@ -181,14 +213,14 @@ if dataset is not None:
             if variables in dataset_integer_variables:
                 
                 fig,ax = plt.subplots(figsize =(fig_w,fig_h))
-                ax.hist(input_dataset[variables])
+                ax.hist(visualization_dataset[variables])
                 st.pyplot(fig)
 
             if variables in dataset_object_variables:
                     
                 height = st.selectbox('select x-axis',dataset_integer_variables)
                 fig,ax = plt.subplots(figsize =(fig_w,fig_h))
-                ax.bar(input_dataset[variables],input_dataset[height])
+                ax.bar(visualization_dataset[variables],visualization_dataset[height])
                 st.pyplot(fig)
         
         if visual_type == "Bi-variate":
@@ -203,10 +235,12 @@ if dataset is not None:
             fig_h_b = st.slider('Adjust Figure height',2,20,key='st_6')
         
             fig,ax = plt.subplots(figsize = (fig_w_b,fig_h_b))
-            ax.scatter(input_dataset[x],input_dataset[y])
+            ax.scatter(visualization_dataset[x],visualization_dataset[y])
             plt.xlabel(x)
             plt.ylabel(y)
             st.pyplot(fig)
+
+    st.markdown('------------------------------------------------------------------------------------------------------------')
 
     with st.beta_expander('Feature Generation'):
 
@@ -226,8 +260,8 @@ if dataset is not None:
 
                     input_dataset = input_dataset.drop(high_frequency,axis = 1)
                     
-                    dataset_integer_variables = input_dataset.select_dtypes(include = ['int','int32','float','float32']).columns
-                    dataset_object_variables = input_dataset.select_dtypes(include = ['O']).columns
+                    #dataset_integer_variables = input_dataset.select_dtypes(include = ['int','int32','float','float32']).columns
+                    #dataset_object_variables = input_dataset.select_dtypes(include = ['O']).columns
                 
                 if i == 'Encode categorical columns':
 
@@ -269,10 +303,10 @@ if dataset is not None:
         st.markdown('#### Generate Aggregations')
 
         st.markdown('\n ##### Select Grouping column \n')
-        group_col = st.selectbox('',input_dataset.select_dtypes(include = ['O']).columns  )
+        group_col = st.selectbox('',input_dataset.select_dtypes(include = ['O']).columns,key = 'g_1'  )
 
         st.markdown('\n##### Select column to aggregate')
-        agg_col = st.selectbox('',input_dataset.select_dtypes(include = ['int','int64','float','float64']).columns)
+        agg_col = st.selectbox('',input_dataset.select_dtypes(include = ['int','int64','float','float64']).columns,key = 'a_1')
 
         st.markdown('##### Select Aggregation')
         aggregation = st.multiselect('',['Sum','Average'])
@@ -282,6 +316,7 @@ if dataset is not None:
         st.write(working_dataset.head())
         st.write('Updates Coming soon')
 
+    st.markdown('------------------------------------------------------------------------------------------------------------')
 
     with st.beta_expander('Predictive Power'):
 
@@ -316,8 +351,9 @@ if dataset is not None:
 
             updated_dataset_with_selected_features = input_dataset[high_pred]
 
-            st.write(updated_dataset_with_selected_features)
+            #st.write(updated_dataset_with_selected_features)
         
+    st.markdown('------------------------------------------------------------------------------------------------------------')
 
     with st.beta_expander('Model Training'):
 
@@ -364,7 +400,7 @@ if dataset is not None:
                 
                 if st.checkbox('Start Training'):
 
-                    model,score = manual_model_regression(model_type,train_X,train_y,test_X,test_y)
+                    model,score = manual_model_training_regression(model_type,train_X,train_y,test_X,test_y)
 
                     if model_type == 'Linear Regression':
 
@@ -379,16 +415,18 @@ if dataset is not None:
                 with col3:
                 
                     model_type = st.radio('Select training algorithm',['Logistic Regression','Random Forest'])
-
+                    
                     training_size = st.slider('Select Training set size',0.1,1.0,step=0.1,)
                     
-                    test_size = np.round(1-training_size,2)
-
+                    
                 with col4:
                     
                     target = st.selectbox('Select Target variable',working_dataset.columns)
+
                     target = target.lower()
                     
+                    test_size = np.round(1-training_size,2)
+
                     if st.checkbox('\n Convert target to object type?'):
                     
                         modeling_dataset[target] = working_dataset[target].astype('O')
@@ -421,6 +459,8 @@ if dataset is not None:
             col5,col6 = st.beta_columns(2)
             
             with col5:
+
+                problem_type = st.radio('Select problem type',['Regression','Classification'])
                 target_variable = st.selectbox("Select target variable",working_dataset.columns)
                 target_variable = target_variable.lower()
             
@@ -447,9 +487,14 @@ if dataset is not None:
                         time.sleep(1)
                         progress_bar.progress(compl+1)
 
-                    predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
+                    if problem_type == 'Classification':
+
+                        predictor,model_leaderboard = func_classification(train_data,test_data,target_variable)
                     
-                   
+                    if problem_type == 'Regression':
+                        
+                        predictor,model_leaderboard = func_regression(train_data,test_data,target_variable)
+                    
                     st.markdown('## Resulting model leaderboard')
                     st.dataframe(model_leaderboard[['model','score_val']].sort_values('score_val',ascending = False))
 
