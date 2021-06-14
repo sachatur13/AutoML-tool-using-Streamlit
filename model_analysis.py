@@ -106,7 +106,7 @@ with st.beta_expander('Data selection'):
 st.markdown('------------------------------------------------------------------------------------------------------------')
     
 #### Dataset details section    
-if dataset is not None:
+try:
             
     with st.beta_expander('View dataset details'):
             
@@ -185,7 +185,11 @@ if dataset is not None:
 
 
     st.markdown('------------------------------------------------------------------------------------------------------------')
+
+except:
+    st.error('Something is wrong here, check your input')
 #### Data visualization section
+try:
     with st.beta_expander('Data Visualization'):
 
         st.markdown('#### Select visualization type')
@@ -239,9 +243,12 @@ if dataset is not None:
             plt.xlabel(x)
             plt.ylabel(y)
             st.pyplot(fig)
-
     st.markdown('------------------------------------------------------------------------------------------------------------')
+except:
+    st.error('Somethin is wrong here, check your input')
+    
 
+try:
     with st.beta_expander('Feature Generation'):
 
         st.write('The preprocessing methods to be updated for better flow')
@@ -315,9 +322,12 @@ if dataset is not None:
 
         st.write(working_dataset.head())
         st.write('Updates Coming soon')
-
     st.markdown('------------------------------------------------------------------------------------------------------------')
+except:
+    st.error('Somethin is wrong here, check your input')
+    
 
+try:
     with st.beta_expander('Predictive Power'):
 
         target_var = st.selectbox('Select Target Variable',working_dataset.columns)
@@ -352,9 +362,12 @@ if dataset is not None:
             updated_dataset_with_selected_features = input_dataset[high_pred]
 
             #st.write(updated_dataset_with_selected_features)
-        
     st.markdown('------------------------------------------------------------------------------------------------------------')
+except:
+    st.error('Somethin is wrong here, check your input')    
+    
 
+try:
     with st.beta_expander('Model Training'):
 
         if selected_features==True:
@@ -364,7 +377,6 @@ if dataset is not None:
         else:
 
             working_dataset = input_dataset
-
 
 #        modeling_dataset = working_dataset
         
@@ -400,7 +412,7 @@ if dataset is not None:
                 
                 if st.checkbox('Start Training'):
 
-                    model,score = manual_model_training_regression(model_type,train_X,train_y,test_X,test_y)
+                    predictor,score = manual_model_training_regression(model_type,train_X,train_y,test_X,test_y)
 
                     if model_type == 'Linear Regression':
 
@@ -439,7 +451,7 @@ if dataset is not None:
                     
                 if st.checkbox('Start Training'):
 
-                    accuracy,f1_score,confusion_matrix,model = manual_model_training_classification(model_type,train_X,train_y,test_X,test_y)
+                    accuracy,f1_score,confusion_matrix,predictor = manual_model_training_classification(model_type,train_X,train_y,test_X,test_y)
 
                     st.write(model_type,' Accuracy: ',accuracy)
                     st.write(model_type,' F1 Score: ',f1_score)
@@ -508,3 +520,46 @@ if dataset is not None:
                         st.write(fig)
                 
                         trained_models = model_leaderboard['model']
+    st.markdown('------------------------------------------------------------------------------------------------------------')
+
+except:
+    st.error('Somethin is wrong here, check your input')
+    
+try:
+    with st.beta_expander('Test Predictions'):
+
+            if working_dataset is not None:
+
+                categorical_columns = working_dataset.select_dtypes(include = ['O']).columns
+                numeric_columns = working_dataset.select_dtypes(include = ['int','float']).columns
+
+                col_7,col_8 = st.beta_columns(2)
+
+                with col_7:
+
+                    st.markdown('## Select values')
+                    pred_list = []
+                    col_name = []
+
+                    for i in categorical_columns:
+                        st.write(i)
+                        selection = st.selectbox(i,working_dataset[i].unique())
+
+                    for i in numeric_columns:
+
+                        max = working_dataset[i].max()
+                        st.markdown(i.upper())
+                        selection_numeric = st.slider('',min_value = 0.0,max_value = float(max),key = i)
+                        col_name.append(i)
+                        pred_list.append(selection_numeric)
+
+                df = pd.DataFrame([],columns = col_name)
+
+                df = df.append(pd.Series(pred_list,index = col_name),ignore_index = True)
+
+                with col_8:
+                    st.write('To come')
+    #prediction_dataframe = pd.DataFrame(,columns = col_name)
+except:
+    st.error('Something is wrong, check your input')        
+    
