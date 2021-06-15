@@ -528,7 +528,7 @@ except:
 #try:
 with st.beta_expander('Test Predictions (Currently available for sample datasets only)'):
 
-    if option == 'Sample Datasets':
+    if option == 'Sample datasets':
         if working_dataset is not None :
 
             working_dataset_pred = working_dataset.drop(target,axis = 1)
