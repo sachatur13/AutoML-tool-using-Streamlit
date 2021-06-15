@@ -49,9 +49,9 @@ with st.sidebar.beta_expander('Features'):
     st.markdown('#### Model Training: ')
     st.markdown(' - Manual (Classification / Regression) using Linear regression, Logistic regression and RandomForest')
     st.markdown('- Automated, using Autogluon')
-
+    st.markdown(' - Prediction explanation using LIME (Sample datasets only')
 with st.sidebar.beta_expander('Upcoming'):
-    st.markdown('- LIME prediction explanation')
+    st.markdown('- LIME prediction explanation for CSV uploads')
 
 st.subheader('Select options: ')
 
