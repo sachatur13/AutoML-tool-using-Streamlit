@@ -68,9 +68,9 @@ with st.expander('Data selection'):
         option_prob = st.selectbox('',['Regression','Classification'])
 
         if option_prob == 'Regression':
-            from sklearn.datasets import load_boston
+            from sklearn.datasets import load_diabetes
             dataset = 'temp'
-            dataset_x = load_boston()
+            dataset_x = load_diabetes()
             input_dataset = pd.DataFrame(dataset_x.data,columns= dataset_x.feature_names)
             input_dataset['target'] = dataset_x.target
             input_dataset.columns = input_dataset.columns.str.lower()
