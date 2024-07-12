@@ -433,21 +433,21 @@ try:
                     
                 with col4:
                     
-                    target = st.selectbox('Select Target variable',working_dataset.columns)
+                    target_variable = st.selectbox('Select Target variable',working_dataset.columns)
 
-                    target = target.lower()
+                    target_variable = target_variable.lower()
                     
                     test_size = np.round(1-training_size,2)
 
                     if st.checkbox('\n Convert target to object type?'):
                     
-                        working_dataset[target] = working_dataset[target].astype('O')
+                        working_dataset[target_variable] = working_dataset[target_variable].astype('O')
 
                     st.write('\n Training set  size (%) : ',training_size)
                     
                     st.write('\n Test set size (%) :',test_size)
 
-                    train_X,test_X,train_y,test_y = train_test_split(working_dataset.drop(target,axis = 1),working_dataset[target],test_size=test_size,random_state = 42)
+                    train_X,test_X,train_y,test_y = train_test_split(working_dataset.drop(target_variable,axis = 1),working_dataset[target_variable],test_size=test_size,random_state = 42)
                     
                 if st.checkbox('Start Training'):
 
@@ -530,7 +530,7 @@ with st.expander('Test Predictions (Currently available for sample datasets only
 
     if option == 'Sample datasets' and working_dataset is not None:
 
-            working_dataset_pred = working_dataset.drop(target,axis = 1)
+            working_dataset_pred = working_dataset.drop(target_variable,axis = 1)
 
             categorical_columns = working_dataset_pred.select_dtypes(include = ['O']).columns
             numeric_columns = working_dataset_pred.select_dtypes(include = ['int','float']).columns
