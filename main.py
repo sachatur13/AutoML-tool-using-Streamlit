@@ -23,7 +23,7 @@ st.header('                                                    Open source Machi
 
 st.sidebar.markdown('This app helps to train classification and regression(coming soon) in manual and automated mode. For Manual classification tasks sklearn LogisticRegression and RandomForest are used in default settings. For automated model training [Autogluon](https://auto.gluon.ai/stable/index.html) library is used.')
 
-with st.sidebar.beta_expander('Features'):
+with st.expander('Features'):
     
     st.markdown('#### View dataset details: ')
     st.markdown('- Use sample datasets (Iris, Boston) ')
@@ -50,12 +50,12 @@ with st.sidebar.beta_expander('Features'):
     st.markdown(' - Manual (Classification / Regression) using Linear regression, Logistic regression and RandomForest')
     st.markdown('- Automated, using Autogluon')
     st.markdown(' - Prediction explanation using LIME (Sample datasets only')
-with st.sidebar.beta_expander('Upcoming'):
+with st.expander('Upcoming'):
     st.markdown('- LIME prediction explanation for CSV uploads')
 
 st.subheader('Select options: ')
 
-with st.beta_expander('Data selection'):
+with st.expander('Data selection'):
 
     st.markdown('Select option to upload your own dataset in csv format or select from existing sample datasets.')
     st.markdown('Iris dataset is used for Classification and Boston dataset is used for Regression tasks.')
@@ -108,7 +108,7 @@ st.markdown('-------------------------------------------------------------------
 #### Dataset details section    
 try:
             
-    with st.beta_expander('View dataset details'):
+    with st.expander('View dataset details'):
             
         st.markdown('#### Number of records: ')
         st.write(input_dataset.shape[0])
@@ -124,7 +124,7 @@ try:
     
     st.markdown('------------------------------------------------------------------------------------------------------------')
 
-    with st.beta_expander('Data type conversion'):
+    with st.expander('Data type conversion'):
 
         dataset_integer_variables = input_dataset.select_dtypes(['int','float']).columns
         dataset_object_variables = input_dataset.select_dtypes('O').columns
@@ -190,7 +190,7 @@ except:
     st.error('Something is wrong here, check your input')
 #### Data visualization section
 try:
-    with st.beta_expander('Data Visualization'):
+    with st.expander('Data Visualization'):
 
         st.markdown('#### Select visualization type')
         visual_type = st.radio('',('Univariate','Bi-variate'))
@@ -249,7 +249,7 @@ except:
     
 
 try:
-    with st.beta_expander('Feature Generation'):
+    with st.expander('Feature Generation'):
 
         st.write('The preprocessing methods to be updated for better flow')
 
@@ -328,7 +328,7 @@ except:
     
 
 try:
-    with st.beta_expander('Predictive Power'):
+    with st.expander('Predictive Power'):
 
         target_var = st.selectbox('Select Target Variable',working_dataset.columns)
 
@@ -368,7 +368,7 @@ except:
     
 
 try:
-    with st.beta_expander('Model Training'):
+    with st.expander('Model Training'):
 
         if selected_features==True:
 
@@ -526,7 +526,7 @@ except:
     st.error('Somethin is wrong here, check your input')
     
 #try:
-with st.beta_expander('Test Predictions (Currently available for sample datasets only)'):
+with st.expander('Test Predictions (Currently available for sample datasets only)'):
 
     if option == 'Sample datasets':
         if working_dataset is not None :
