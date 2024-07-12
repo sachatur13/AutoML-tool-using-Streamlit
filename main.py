@@ -251,9 +251,9 @@ except:
 try:
     with st.expander('Feature Generation'):
 
-        st.write('The preprocessing methods to be updated for better flow')
+        #st.write('The preprocessing methods to be updated for better flow')
 
-        col6,col7 = st.beta_columns(2)
+        col6,col7 = st.columns(2)
 
         with col6:
             operations = st.multiselect('',['Remove High frequency columns','Encode categorical columns','Process Nulls'])
@@ -388,7 +388,7 @@ try:
 
             problem_type = st.selectbox('Select Problem Type',[None,'Classification','Regression'])
 
-            col3,col4 = st.beta_columns(2)
+            col3,col4 = st.columns(2)
 
             if problem_type == 'Regression':
 
@@ -468,7 +468,7 @@ try:
 
             st.markdown('This method uses [Autogluon](https://auto.gluon.ai/stable/index.html) library for automated model training and comparison')
     
-            col5,col6 = st.beta_columns(2)
+            col5,col6 = st.columns(2)
             
             with col5:
 
@@ -536,7 +536,7 @@ with st.expander('Test Predictions (Currently available for sample datasets only
             categorical_columns = working_dataset_pred.select_dtypes(include = ['O']).columns
             numeric_columns = working_dataset_pred.select_dtypes(include = ['int','float']).columns
 
-            col_7,col_8 = st.beta_columns(2)
+            col_7,col_8 = st.columns(2)
 
             with col_7:
 
